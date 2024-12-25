@@ -13,7 +13,7 @@ class PrinterConstraints:
     max_volume: float
     max_items: int
 
-def optimize_printing(print_jobs: List[Dict], constraints: Dict) -> Dict:
+def optimize_printing(print_jobs: List[PrintJob], constraints: PrinterConstraints) -> Dict:
     """
     Оптимізує чергу 3D-друку згідно з пріоритетами та обмеженнями принтера
 
@@ -25,34 +25,83 @@ def optimize_printing(print_jobs: List[Dict], constraints: Dict) -> Dict:
         Dict з порядком друку та загальним часом
     """
 
-    # Тут повинен бути ваш код
+    #### Start of my code
+
+    constraints = PrinterConstraints(constraints["max_volume"], constraints["max_items"])
+
+    print_order = []
+    print_jobs_sorted = {}
+    total_time = 0
+
+    for print_job in print_jobs:
+        priority = print_job.priority
+        if priority not in print_jobs_sorted:
+            print_jobs_sorted[priority] = []
+        # end if
+        print_jobs_sorted[priority].append(print_job)
+    # end for
+
+    batch = []
+    print_volume_remain = constraints.max_volume
+    have_jobs_to_print = True
+    while have_jobs_to_print:
+        added_job = False
+        have_jobs_to_print = False
+        for print_priority_queue in sorted(print_jobs_sorted.keys()):
+            for job in print_jobs_sorted[print_priority_queue]:
+                if job.volume <= print_volume_remain and len(batch) < constraints.max_items and job not in batch:
+                    batch.append(job)
+                    added_job = True
+                    print_volume_remain -= job.volume
+                # end if
+            # end for
+            if len(print_jobs_sorted[print_priority_queue]) > 0:
+                have_jobs_to_print = True
+            # end if
+        # end for
+
+        if (added_job == False and have_jobs_to_print) or (added_job and have_jobs_to_print == False):
+            max_time = 0
+            for job in batch:
+                print_order.append(job.id)
+                p=job.priority
+                print_jobs_sorted[p].remove(job)
+                max_time = max(max_time, job.print_time)
+            # end for
+            total_time += max_time
+            print_volume_remain = constraints.max_volume
+            batch = []
+        # end if
+    # end while
+
+    #### End of my code
 
     return {
-        "print_order": None,
-        "total_time": None
+        "print_order": print_order,
+        "total_time": total_time
     }
 
 # Тестування
 def test_printing_optimization():
     # Тест 1: Моделі однакового пріоритету
     test1_jobs = [
-        {"id": "M1", "volume": 100, "priority": 1, "print_time": 120},
-        {"id": "M2", "volume": 150, "priority": 1, "print_time": 90},
-        {"id": "M3", "volume": 120, "priority": 1, "print_time": 150}
+        PrintJob("M1", 100, 1, 120),
+        PrintJob("M2", 150, 1, 90),
+        PrintJob("M3", 120, 1, 150)
     ]
 
     # Тест 2: Моделі різних пріоритетів
     test2_jobs = [
-        {"id": "M1", "volume": 100, "priority": 2, "print_time": 120},  # лабораторна
-        {"id": "M2", "volume": 150, "priority": 1, "print_time": 90},  # дипломна
-        {"id": "M3", "volume": 120, "priority": 3, "print_time": 150}  # особистий проєкт
+        PrintJob("M1", 100, 2, 120),  # лабораторна
+        PrintJob("M2", 150, 1, 90),  # дипломна
+        PrintJob("M3", 120, 3, 150)  # особистий проєкт
     ]
 
     # Тест 3: Перевищення обмежень об'єму
     test3_jobs = [
-        {"id": "M1", "volume": 250, "priority": 1, "print_time": 180},
-        {"id": "M2", "volume": 200, "priority": 1, "print_time": 150},
-        {"id": "M3", "volume": 180, "priority": 2, "print_time": 120}
+        PrintJob("M1", 250, 1, 180),
+        PrintJob("M2", 200, 1, 150),
+        PrintJob("M3", 180, 2, 120)
     ]
 
     constraints = {
