@@ -12,13 +12,48 @@ def rod_cutting_memo(length: int, prices: List[int]) -> Dict:
         Dict з максимальним прибутком та списком розрізів
     """
 
-		# Тут повинен бути ваш код
+    #### Start of my code
+    memo = {}
 
-    return {
-        "max_profit": None,
-        "cuts": None,
-        "number_of_cuts": None
-    }
+    def solve(cut_len):
+        if cut_len == 0:
+            return {"max_profit": 0, "cuts": [], "number_of_cuts": 0}
+        # end if
+
+        if cut_len in memo:
+            return memo[cut_len]
+        # end if
+
+        max_profit = 0
+        cuts = []
+
+        for i in range(1, cut_len + 1):
+            if i <= len(prices):
+                res = solve(cut_len - i)
+                profit = res["max_profit"] + prices[i - 1]
+
+                if profit > max_profit:
+                    max_profit = profit
+                    cuts = res["cuts"] + [i]
+        # end for
+
+        number_of_cuts = len(cuts) - 1
+
+        memo[cut_len] = {
+            "max_profit": max_profit,
+            "cuts": cuts,
+            "number_of_cuts": number_of_cuts
+        }
+
+        return {
+            "max_profit": max_profit,
+            "cuts": cuts,
+            "number_of_cuts": number_of_cuts
+        }
+
+    return solve(length)
+    #### End of my code
+# end def
 
 def rod_cutting_table(length: int, prices: List[int]) -> Dict:
     """
@@ -32,13 +67,38 @@ def rod_cutting_table(length: int, prices: List[int]) -> Dict:
         Dict з максимальним прибутком та списком розрізів
     """
 
-    # Тут повинен бути ваш код
+    #### Start of my code
+    cut_profits = [0] * (length + 1)
+    cuts = [0] * (length + 1)
+
+    for cut_length in range(1, length + 1):
+        max_profit = 0
+        for cut in range(1, cut_length + 1):
+            if cut <= len(prices):
+                profit = prices[cut - 1] + cut_profits[cut_length - cut]
+                if profit > max_profit:
+                    max_profit = profit
+                    cuts[cut_length] = cut
+                # end if
+            # end if
+        # end for
+        cut_profits[cut_length] = max_profit
+    # end for
+
+    cut_lengths = []
+    while length > 0:
+        cut_lengths.append(cuts[length])
+        length -= cuts[length]
+    # end while
+
+    #### End of my code
 
     return {
-        "max_profit": None,
-        "cuts": None,
-        "number_of_cuts": None
+        "max_profit": cut_profits[-1],
+        "cuts": cut_lengths,
+        "number_of_cuts": len(cut_lengths) - 1
     }
+# end def
 
 def run_tests():
     """Функція для запуску всіх тестів"""
@@ -75,7 +135,7 @@ def run_tests():
         print(f"Розрізи: {memo_result['cuts']}")
         print(f"Кількість розрізів: {memo_result['number_of_cuts']}")
 
-        # Тестуємо табуляцію
+        # # Тестуємо табуляцію
         table_result = rod_cutting_table(test['length'], test['prices'])
         print("\nРезультат табуляції:")
         print(f"Максимальний прибуток: {table_result['max_profit']}")
