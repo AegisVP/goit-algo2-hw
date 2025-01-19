@@ -39,15 +39,20 @@ def add_item_to_tree(tree_struct, id, item):
 def range_query_dict(dict_struct, start: float, end: float):
   ret_list = list()
 
-  for key, item in dict_struct.items():
-    if start <= key <= end: ret_list.append(item)
+  for item in dict_struct.values():
+    if isinstance(item, Item):
+      if start <= item.Price < end: ret_list.append(item)
+    else:
+      if start <= item['Price'] < end: ret_list.append(item)
+    # end if
   # end for
   return ret_list
 # end def
 
 
-def range_query_tree(tree_struct, start: float, end: float):
-  ret_list = list(tree_struct.items(start, end))
+def range_query_tree(tree_struct, start, end):
+  ret_items = tree_struct.items(start, end)
+  ret_list = list(ret_items)
   return ret_list
 # end def
 
@@ -86,13 +91,13 @@ if __name__ == '__main__':
   add_tree_class_start_time = timer()
   for item in csv_data.values():
     item_class = Item(int(item['ID']), item['Name'], item['Category'], float(item['Price']))
-    add_item_to_tree(tree_with_class, item_class.ID, item_class)
+    add_item_to_tree(tree_with_class, (item_class.Price, item_class.ID), item_class)
   # end for
   add_tree_class_duration = timer() - add_tree_class_start_time
   print(f'Adding Class to Tree time: {"{:.4f}".format(add_tree_class_duration * 1000)} ms')
 
-  tree_query_class_duration = timeit(lambda: range_query_tree(tree_with_class, min_price, max_price), number=test_qty)
-  tree_query_class_quantity = len(range_query_tree(tree_with_class, min_price, max_price))
+  tree_query_class_duration = timeit(lambda: range_query_tree(tree_with_class, (min_price,), (max_price,)), number=test_qty)
+  tree_query_class_quantity = len(range_query_tree(tree_with_class, (min_price,), (max_price,)))
   print(f'Class in Tree queries finished:\nGot {tree_query_class_quantity:.0f} results, average time: {"{:.4f}".format(tree_query_class_duration * 1000 / test_qty)} ms')
 
   print(f'─'*50)
@@ -114,16 +119,18 @@ if __name__ == '__main__':
   add_tree_obj_start_time = timer()
   for item in csv_data.values():
     item_obj = {'ID': int(item['ID']), 'Name': item['Name'], 'Category': item['Category'], 'Price': float(item['Price'])}
-    add_item_to_tree(tree_with_obj, item_obj['ID'], item_obj)
+    add_item_to_tree(tree_with_obj, (item_obj['Price'], item_obj['ID']), item_obj)
   # end for
   add_tree_obj_duration = timer() - add_tree_obj_start_time
   print(f'Adding Object to Tree time: {"{:.4f}".format(add_tree_obj_duration * 1000)} ms')
 
-  tree_query_obj_duration = timeit(lambda: range_query_tree(tree_with_obj, min_price, max_price), number=test_qty)
-  tree_query_obj_quantity = len(range_query_tree(tree_with_obj, min_price, max_price))
+  tree_query_obj_duration = timeit(lambda: range_query_tree(tree_with_obj, (min_price,), (max_price,)), number=test_qty)
+  tree_query_obj_items = range_query_tree(tree_with_obj, (min_price,), (max_price,))
+  tree_query_obj_quantity = len(tree_query_obj_items)
   print(f'Object in Tree queries finished:\nGot {tree_query_obj_quantity:.0f} results, average time: {"{:.4f}".format(tree_query_obj_duration * 1000 / test_qty)} ms')
 
   print(f'═'*50)
   print(f"{'End of results':^50}")
   print(f'═'*50)
+  # print(tree_query_obj_items)
 # end if
